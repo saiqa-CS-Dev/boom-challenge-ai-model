@@ -1,0 +1,37 @@
+import pandas as pd
+import numpy as np
+from sklearn.ensemble import RandomForestRegressor
+import joblib
+
+# BOOM CHALLENGE: Final Winning Codebase
+# This script handles training, saving the model, and generating submissions.
+
+def run_pipeline():
+    # Loading datasets
+    train_in = pd.read_csv('train_input.csv')
+    train_out = pd.read_csv('train_output.csv')
+    test_in = pd.read_csv('test_input.csv')
+
+    # Initializing Model
+    model = RandomForestRegressor(n_estimators=1000, random_state=42, n_jobs=-1)
+    model.fit(train_in, train_out)
+
+    # Exporting Model Object
+    joblib.dump(model, 'models.pkl')
+
+    # Forward Predictions
+    preds = model.predict(test_in)
+    preds = np.maximum(preds, 0)
+    
+    sub = pd.DataFrame(preds, columns=train_out.columns)
+    sub.insert(0, 'scenario_id', range(len(sub)))
+    sub.to_csv('prediction_submission.csv', index=False)
+
+    # Inverse Design
+    mask = (train_out['P80'] >= 96) & (train_out['P80'] <= 101) & (train_out['R95'] <= 175)
+    inv = train_in[mask].head(20)
+    inv.insert(0, 'scenario_id', range(len(inv)))
+    inv.to_csv('inverse_submission.csv', index=False)
+
+if __name__ == "__main__":
+    run_pipeline()
